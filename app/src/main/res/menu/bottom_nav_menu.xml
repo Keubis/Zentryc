@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/dashboardFragment"
+        android:icon="@drawable/ic_dashboard"
+        android:title="Inicio" />
+
+    <item
+        android:id="@+id/transactionsFragment"
+        android:icon="@drawable/ic_transactions"
+        android:title="Movimientos" />
+
+    <item
+        android:id="@+id/addTransactionFragment"
+        android:icon="@drawable/ic_add"
+        android:title="Añadir" />
+
+    <item
+        android:id="@+id/statisticsFragment"
+        android:icon="@drawable/ic_statistics"
+        android:title="Estadísticas" />
+
+</menu>
