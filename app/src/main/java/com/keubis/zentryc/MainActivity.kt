@@ -5,7 +5,6 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.keubis.zentryc.ui.base.BaseActivity
-import com.keubis.zentryc.ui.dashboard.DashboardFragment
 
 class MainActivity : BaseActivity() {
 
