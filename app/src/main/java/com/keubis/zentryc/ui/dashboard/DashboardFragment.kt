@@ -6,8 +6,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.keubis.zentryc.R
 import com.keubis.zentryc.ui.base.BaseFragment
+import com.keubis.zentryc.ui.transactions.TransactionAdapter
 
 class DashboardFragment : BaseFragment() {
 
@@ -15,6 +18,8 @@ class DashboardFragment : BaseFragment() {
     private lateinit var tvTotalIncome: TextView
     private lateinit var tvTotalExpenses: TextView
     private lateinit var tvBalance: TextView
+    private lateinit var recyclerRecent: RecyclerView
+    private lateinit var adapter: TransactionAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -27,13 +32,21 @@ class DashboardFragment : BaseFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewModel = ViewModelProvider(this)[DashboardViewModel::class.java]
+        viewModel = ViewModelProvider(requireActivity())[DashboardViewModel::class.java]
 
         tvTotalIncome = view.findViewById(R.id.tvTotalIncome)
         tvTotalExpenses = view.findViewById(R.id.tvTotalExpenses)
         tvBalance = view.findViewById(R.id.tvBalance)
+        recyclerRecent = view.findViewById(R.id.recyclerRecent)
 
+        setupRecyclerView()
         observeData()
+    }
+
+    private fun setupRecyclerView() {
+        adapter = TransactionAdapter { }
+        recyclerRecent.layoutManager = LinearLayoutManager(requireContext())
+        recyclerRecent.adapter = adapter
     }
 
     private fun observeData() {
@@ -47,17 +60,20 @@ class DashboardFragment : BaseFragment() {
             tvTotalExpenses.text = String.format("%.2f €", amount)
         }
 
-        viewModel.totalIncome.observe(viewLifecycleOwner) { income ->
-            viewModel.totalExpenses.observe(viewLifecycleOwner) { expenses ->
-                val balance = (income ?: 0.0) - (expenses ?: 0.0)
-                tvBalance.text = String.format("%.2f €", balance)
-                tvBalance.setTextColor(
-                    if (balance >= 0)
-                        requireContext().getColor(android.R.color.holo_green_dark)
-                    else
-                        requireContext().getColor(android.R.color.holo_red_dark)
-                )
-            }
+        viewModel.allTransactions.observe(viewLifecycleOwner) { transactions ->
+            val income = viewModel.totalIncome.value ?: 0.0
+            val expenses = viewModel.totalExpenses.value ?: 0.0
+            val balance = income - expenses
+            tvBalance.text = String.format("%.2f €", balance)
+            tvBalance.setTextColor(
+                if (balance >= 0)
+                    requireContext().getColor(android.R.color.holo_green_dark)
+                else
+                    requireContext().getColor(android.R.color.holo_red_dark)
+            )
+            // Mostrar los últimos 5 movimientos
+            val recent = transactions.take(5)
+            adapter.submitList(recent)
         }
     }
 }

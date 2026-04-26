@@ -1,3 +1,23 @@
 <resources>
     <string name="app_name">Zentryc</string>
+    <string name="dashboard">Inicio</string>
+    <string name="transactions">Movimientos</string>
+    <string name="add">Añadir</string>
+    <string name="statistics">Estadísticas</string>
+    <string name="balance">Balance actual</string>
+    <string name="income">Ingresos</string>
+    <string name="expenses">Gastos</string>
+    <string name="new_transaction">Nuevo movimiento</string>
+    <string name="save">Guardar</string>
+    <string name="amount">Importe (€)</string>
+    <string name="description">Descripción</string>
+    <string name="category">Categoría</string>
+    <string name="date">Fecha</string>
+    <string name="recent_transactions">Últimos movimientos</string>
+    <string name="no_transactions">No hay movimientos aún</string>
+    <string name="delete_transaction">Eliminar movimiento</string>
+    <string name="total_income">Total ingresos</string>
+    <string name="total_expenses">Total gastos</string>
+    <string name="expenses_by_category">Gastos por categoría</string>
+    <string name="total_summary">Resumen total</string>
 </resources>
