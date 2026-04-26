@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     android:background="#F5F5F5">
 
+    <!-- Cabecera -->
     <TextView
         android:id="@+id/tvTitle"
         android:layout_width="wrap_content"
@@ -19,11 +20,38 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
+    <!-- Botón filtro -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnFilter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Filtrar"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="12dp"
+        app:icon="@android:drawable/ic_menu_sort_by_size"
+        app:cornerRadius="20dp"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Chip filtro activo -->
+    <com.google.android.material.chip.Chip
+        android:id="@+id/chipFilterActive"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:visibility="gone"
+        app:closeIconVisible="true"
+        style="@style/Widget.MaterialComponents.Chip.Filter"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle"
+        app:layout_constraintStart_toStartOf="parent" />
+
     <TextView
         android:id="@+id/tvEmpty"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="No hay movimientos aún"
+        android:text="No hay movimientos"
         android:textSize="16sp"
         android:textColor="#9E9E9E"
         android:visibility="gone"
@@ -37,7 +65,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
-        app:layout_constraintTop_toBottomOf="@id/tvTitle"
+        app:layout_constraintTop_toBottomOf="@id/chipFilterActive"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

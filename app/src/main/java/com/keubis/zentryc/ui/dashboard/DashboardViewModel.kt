@@ -36,4 +36,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             repository.updateExpense(expense)
         }
     }
+    fun getTransactionsByDateRange(startDate: Long, endDate: Long) =
+        repository.getTransactionsByDateRange(startDate, endDate)
+
 }
