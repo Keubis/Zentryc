@@ -24,4 +24,9 @@
         android:name="com.keubis.zentryc.ui.statistics.StatisticsFragment"
         android:label="Estadísticas" />
 
+    <fragment
+        android:id="@+id/categoriesFragment"
+        android:name="com.keubis.zentryc.ui.categories.CategoriesFragment"
+        android:label="Categorías" />
+
 </navigation>

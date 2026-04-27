@@ -86,19 +86,21 @@ class StatisticsFragment : BaseFragment() {
                 return@observe
             }
 
-            val entries = expensesByCategory.map { (category, amount) ->
-                PieEntry(amount.toFloat(), category)
+            val entries = expensesByCategory.map { (categoryName, amount) ->
+                PieEntry(amount.toFloat(), categoryName)
             }
 
-            val colors = listOf(
-                Color.parseColor("#FF5733"),
-                Color.parseColor("#3380FF"),
-                Color.parseColor("#9B59B6"),
-                Color.parseColor("#2ECC71"),
-                Color.parseColor("#F39C12"),
-                Color.parseColor("#1ABC9C"),
-                Color.parseColor("#95A5A6")
-            )
+// Color real de cada categoría
+            val colors = expensesByCategory.keys.map { categoryName ->
+                val category = transactions
+                    .firstOrNull { it.category?.name == categoryName }
+                    ?.category
+                try {
+                    Color.parseColor(category?.colorHex ?: "#95A5A6")
+                } catch (e: Exception) {
+                    Color.GRAY
+                }
+            }
 
             val dataSet = PieDataSet(entries, "").apply {
                 this.colors = colors

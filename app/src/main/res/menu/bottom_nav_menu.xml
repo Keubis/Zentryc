@@ -21,4 +21,9 @@
         android:icon="@drawable/ic_statistics"
         android:title="Estadísticas" />
 
+    <item
+        android:id="@+id/categoriesFragment"
+        android:icon="@drawable/ic_categories"
+        android:title="Categorías" />
+
 </menu>

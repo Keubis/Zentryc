@@ -39,4 +39,16 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun getTransactionsByDateRange(startDate: Long, endDate: Long) =
         repository.getTransactionsByDateRange(startDate, endDate)
 
+    fun deleteCategory(category: Category) {
+        viewModelScope.launch {
+            repository.deleteCategory(category)
+        }
+    }
+
+    fun insertCategory(category: Category) {
+        viewModelScope.launch {
+            repository.insertCategory(category)
+        }
+    }
+
 }
