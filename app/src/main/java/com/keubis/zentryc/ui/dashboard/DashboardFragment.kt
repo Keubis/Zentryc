@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.keubis.zentryc.R
 import com.keubis.zentryc.ui.base.BaseFragment
 import com.keubis.zentryc.ui.transactions.TransactionAdapter
+import androidx.navigation.fragment.findNavController
 
 class DashboardFragment : BaseFragment() {
 
@@ -38,6 +39,13 @@ class DashboardFragment : BaseFragment() {
         tvTotalExpenses = view.findViewById(R.id.tvTotalExpenses)
         tvBalance = view.findViewById(R.id.tvBalance)
         recyclerRecent = view.findViewById(R.id.recyclerRecent)
+
+        // Botón cerrar sesión
+        view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnLogout)
+            .setOnClickListener {
+                com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+                findNavController().navigate(R.id.loginFragment)
+            }
 
         setupRecyclerView()
         observeData()

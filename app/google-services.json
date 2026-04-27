@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "359522126285",
+    "project_id": "zentryc-3a0cd",
+    "storage_bucket": "zentryc-3a0cd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:359522126285:android:da7afeb1bd0854698bdc84",
+        "android_client_info": {
+          "package_name": "com.keubis.zentryc"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC6_F9sCB0eYr7uVhQDIXjKclIERuzqJ9o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
