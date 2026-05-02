@@ -36,7 +36,7 @@ interface TransactionDao {
     fun getTotalExpenses(): LiveData<Double?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertExpense(expense: Expense)
+    suspend fun insertExpense(expense: Expense): Long
 
     @Update
     suspend fun updateExpense(expense: Expense)

@@ -19,8 +19,9 @@ class ZentrycRepository(context: Context) {
     val totalIncome: LiveData<Double?> = transactionDao.getTotalIncome()
     val totalExpenses: LiveData<Double?> = transactionDao.getTotalExpenses()
 
-    suspend fun insertExpense(expense: Expense) {
-        transactionDao.insertExpense(expense)
+    // Inserta una transacción y devuelve el id generado por Room
+    suspend fun insertExpense(expense: Expense): Long {
+        return transactionDao.insertExpense(expense)
     }
 
     suspend fun updateExpense(expense: Expense) {
