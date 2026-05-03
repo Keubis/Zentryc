@@ -40,6 +40,14 @@ class TransactionsFragment : BaseFragment() {
     private var filterStartDate: Long? = null
     private var filterEndDate: Long? = null
 
+    private lateinit var btnFilterCategory: MaterialButton
+
+    private lateinit var chipCategoryActive: Chip
+
+    private var filterCategoryId: Int? = null
+
+    private var filterCategoryName: String? = null
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -61,11 +69,15 @@ class TransactionsFragment : BaseFragment() {
         tvSelectionCount = view.findViewById(R.id.tvSelectionCount)
         btnCancelSelection = view.findViewById(R.id.btnCancelSelection)
         btnDeleteSelected = view.findViewById(R.id.btnDeleteSelected)
+        btnFilterCategory = view.findViewById(R.id.btnFilterCategory)
+        chipCategoryActive = view.findViewById(R.id.chipCategoryActive)
 
         setupRecyclerView()
         setupFilterButton()
         setupSelectionBar()
         observeAllTransactions()
+        setupCategoryFilterButton()
+
     }
 
     private fun setupRecyclerView() {
@@ -285,5 +297,73 @@ class TransactionsFragment : BaseFragment() {
             }
             .setNegativeButton("Cancelar", null)
             .show()
+    }
+
+    private fun setupCategoryFilterButton() {
+        btnFilterCategory.setOnClickListener {
+            showCategoryPicker()
+        }
+        chipCategoryActive.setOnCloseIconClickListener {
+            clearCategoryFilter()
+        }
+    }
+
+    private fun showCategoryPicker() {
+        viewModel.allCategories.observe(viewLifecycleOwner) { categories ->
+            if (categories.isEmpty()) {
+                showError("No hay categorías disponibles")
+                return@observe
+            }
+
+            val categoryNames = categories.map { it.name }.toTypedArray()
+
+            AlertDialog.Builder(requireContext())
+                .setTitle("Filtrar por categoría")
+                .setItems(categoryNames) { _, which ->
+                    val selectedCategory = categories[which]
+                    filterCategoryId = selectedCategory.id
+                    filterCategoryName = selectedCategory.name
+                    applyCategoryFilter(selectedCategory.id, selectedCategory.name)
+                }
+                .setNegativeButton("Cancelar", null)
+                .show()
+        }
+    }
+
+    private fun applyCategoryFilter(categoryId: Int, categoryName: String) {
+        // Muestra el chip con la categoría seleccionada
+        chipCategoryActive.text = categoryName
+        chipCategoryActive.visibility = View.VISIBLE
+
+        // Si hay también filtro de fecha combina ambos filtros
+        if (filterStartDate != null && filterEndDate != null) {
+            viewModel.getTransactionsByCategoryAndDateRange(
+                categoryId,
+                filterStartDate!!,
+                filterEndDate!!
+            ).observe(viewLifecycleOwner) { transactions ->
+                adapter.submitList(transactions)
+                updateEmptyState(transactions.isEmpty())
+            }
+        } else {
+            viewModel.getTransactionsByCategory(categoryId)
+                .observe(viewLifecycleOwner) { transactions ->
+                    adapter.submitList(transactions)
+                    updateEmptyState(transactions.isEmpty())
+                }
+        }
+    }
+
+    private fun clearCategoryFilter() {
+        filterCategoryId = null
+        filterCategoryName = null
+        chipCategoryActive.visibility = View.GONE
+
+        // Si hay filtro de fecha activo vuelve a aplicarlo sin categoría
+        if (filterStartDate != null && filterEndDate != null) {
+            applyFilter(filterStartDate!!, filterEndDate!!, chipFilterActive.text.toString())
+        } else {
+            observeAllTransactions()
+        }
     }
 }

@@ -55,4 +55,23 @@ interface TransactionDao {
     // Total de gastos en un rango de fechas
     @Query("SELECT SUM(amount) FROM transactions WHERE type = 'EXPENSE' AND date BETWEEN :startDate AND :endDate")
     fun getExpensesByDateRange(startDate: Long, endDate: Long): LiveData<Double?>
+
+    // Obtiene transacciones filtradas por categoría
+    @Transaction
+    @Query("SELECT * FROM transactions WHERE categoryId = :categoryId ORDER BY date DESC")
+    fun getTransactionsByCategory(categoryId: Int): LiveData<List<TransactionWithCategory>>
+
+    // Obtiene transacciones filtradas por categoría y rango de fechas
+    @Transaction
+    @Query("""
+    SELECT * FROM transactions 
+    WHERE categoryId = :categoryId 
+    AND date BETWEEN :startDate AND :endDate 
+    ORDER BY date DESC
+""")
+    fun getTransactionsByCategoryAndDateRange(
+        categoryId: Int,
+        startDate: Long,
+        endDate: Long
+    ): LiveData<List<TransactionWithCategory>>
 }

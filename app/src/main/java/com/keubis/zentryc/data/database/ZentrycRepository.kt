@@ -63,4 +63,18 @@ class ZentrycRepository(context: Context) {
     fun getExpensesByDateRange(startDate: Long, endDate: Long): LiveData<Double?> {
         return transactionDao.getExpensesByDateRange(startDate, endDate)
     }
+
+    // Obtiene transacciones por categoría
+    fun getTransactionsByCategory(categoryId: Int): LiveData<List<TransactionWithCategory>> {
+        return transactionDao.getTransactionsByCategory(categoryId)
+    }
+
+    // Obtiene transacciones por categoría y rango de fechas
+    fun getTransactionsByCategoryAndDateRange(
+        categoryId: Int,
+        startDate: Long,
+        endDate: Long
+    ): LiveData<List<TransactionWithCategory>> {
+        return transactionDao.getTransactionsByCategoryAndDateRange(categoryId, startDate, endDate)
+    }
 }

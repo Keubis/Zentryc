@@ -121,4 +121,15 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun getExpensesByDateRange(startDate: Long, endDate: Long): LiveData<Double?> {
         return localRepository.getExpensesByDateRange(startDate, endDate)
     }
+
+    // Obtiene transacciones filtradas por categoría
+    fun getTransactionsByCategory(categoryId: Int) =
+        localRepository.getTransactionsByCategory(categoryId)
+
+    // Obtiene transacciones filtradas por categoría y rango de fechas
+    fun getTransactionsByCategoryAndDateRange(
+        categoryId: Int,
+        startDate: Long,
+        endDate: Long
+    ) = localRepository.getTransactionsByCategoryAndDateRange(categoryId, startDate, endDate)
 }
