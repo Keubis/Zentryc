@@ -74,9 +74,6 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    fun getTransactionsByDateRange(startDate: Long, endDate: Long) =
-        localRepository.getTransactionsByDateRange(startDate, endDate)
-
     // Sincroniza los datos de Firestore a Room al iniciar sesión
     fun syncFromFirestore() {
         viewModelScope.launch {
@@ -109,5 +106,19 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch {
             localRepository.deleteAllExpenses()
         }
+    }
+
+    // Obtiene las transacciones filtradas por rango de fechas
+    fun getTransactionsByDateRange(startDate: Long, endDate: Long) =
+        localRepository.getTransactionsByDateRange(startDate, endDate)
+
+    // Obtiene el total de ingresos en un rango de fechas
+    fun getIncomeByDateRange(startDate: Long, endDate: Long): LiveData<Double?> {
+        return localRepository.getIncomeByDateRange(startDate, endDate)
+    }
+
+    // Obtiene el total de gastos en un rango de fechas
+    fun getExpensesByDateRange(startDate: Long, endDate: Long): LiveData<Double?> {
+        return localRepository.getExpensesByDateRange(startDate, endDate)
     }
 }

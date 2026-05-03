@@ -47,4 +47,12 @@ interface TransactionDao {
     // Elimina todas las transacciones de Room
     @Query("DELETE FROM transactions")
     suspend fun deleteAllTransactions()
+
+    // Total de ingresos en un rango de fechas
+    @Query("SELECT SUM(amount) FROM transactions WHERE type = 'INCOME' AND date BETWEEN :startDate AND :endDate")
+    fun getIncomeByDateRange(startDate: Long, endDate: Long): LiveData<Double?>
+
+    // Total de gastos en un rango de fechas
+    @Query("SELECT SUM(amount) FROM transactions WHERE type = 'EXPENSE' AND date BETWEEN :startDate AND :endDate")
+    fun getExpensesByDateRange(startDate: Long, endDate: Long): LiveData<Double?>
 }

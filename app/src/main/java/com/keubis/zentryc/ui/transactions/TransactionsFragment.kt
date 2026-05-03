@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.ViewModelProvider
@@ -29,6 +31,10 @@ class TransactionsFragment : BaseFragment() {
     private lateinit var tvEmpty: TextView
     private lateinit var btnFilter: MaterialButton
     private lateinit var chipFilterActive: Chip
+    private lateinit var layoutSelectionBar: LinearLayout
+    private lateinit var tvSelectionCount: TextView
+    private lateinit var btnCancelSelection: ImageButton
+    private lateinit var btnDeleteSelected: ImageButton
 
     private val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale("es", "ES"))
     private var filterStartDate: Long? = null
@@ -51,133 +57,78 @@ class TransactionsFragment : BaseFragment() {
         tvEmpty = view.findViewById(R.id.tvEmpty)
         btnFilter = view.findViewById(R.id.btnFilter)
         chipFilterActive = view.findViewById(R.id.chipFilterActive)
+        layoutSelectionBar = view.findViewById(R.id.layoutSelectionBar)
+        tvSelectionCount = view.findViewById(R.id.tvSelectionCount)
+        btnCancelSelection = view.findViewById(R.id.btnCancelSelection)
+        btnDeleteSelected = view.findViewById(R.id.btnDeleteSelected)
 
         setupRecyclerView()
         setupFilterButton()
+        setupSelectionBar()
         observeAllTransactions()
     }
 
     private fun setupRecyclerView() {
-        adapter = TransactionAdapter { transactionWithCategory ->
-            // Menú con opciones al pulsar largo
-            val options = arrayOf("✏️ Editar", "🗑️ Eliminar")
-            AlertDialog.Builder(requireContext())
-                .setTitle(transactionWithCategory.expense.description)
-                .setItems(options) { _, which ->
-                    when (which) {
-                        0 -> openEditDialog(transactionWithCategory)
-                        1 -> confirmDelete(transactionWithCategory)
-                    }
+        adapter = TransactionAdapter(
+            onItemLongClick = { transactionWithCategory ->
+                // En modo selección la pulsación larga muestra menú editar/eliminar
+                if (!adapter.isSelectionMode) {
+                    val options = arrayOf("✏️ Editar", "🗑️ Eliminar")
+                    AlertDialog.Builder(requireContext())
+                        .setTitle(transactionWithCategory.expense.description)
+                        .setItems(options) { _, which ->
+                            when (which) {
+                                0 -> openEditDialog(transactionWithCategory)
+                                1 -> confirmDelete(transactionWithCategory)
+                            }
+                        }
+                        .show()
                 }
-                .show()
-        }
+            },
+            onSelectionChanged = { count ->
+                // Actualiza la barra de selección
+                if (count > 0) {
+                    layoutSelectionBar.visibility = View.VISIBLE
+                    tvSelectionCount.text = "$count seleccionado${if (count != 1) "s" else ""}"
+                } else {
+                    layoutSelectionBar.visibility = View.GONE
+                }
+            }
+        )
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
     }
-    private fun openEditDialog(item: TransactionWithCategory) {
-        val dialogView = LayoutInflater.from(requireContext())
-            .inflate(R.layout.fragment_add_transaction, null)
 
-        dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSave).visibility = View.GONE
-
-        val tabType = dialogView.findViewById<com.google.android.material.tabs.TabLayout>(R.id.tabTransactionType)
-        val etAmount = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etAmount)
-        val etDescription = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etDescription)
-        val etDate = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etDate)
-        val acCategory = dialogView.findViewById<android.widget.AutoCompleteTextView>(R.id.acCategory)
-
-        // Rellena con los datos actuales
-        etAmount.setText(item.expense.amount.toString())
-        etDescription.setText(item.expense.description)
-        etDate.setText(dateFormat.format(item.expense.date))
-
-        tabType.addTab(tabType.newTab().setText("Gasto"))
-        tabType.addTab(tabType.newTab().setText("Ingreso"))
-        val tabIndex = if (item.expense.type == "INCOME") 1 else 0
-        tabType.selectTab(tabType.getTabAt(tabIndex))
-
-        var selectedDate = item.expense.date
-        var selectedCategoryId = item.expense.categoryId
-
-        // Selector de fecha
-        etDate.setOnClickListener {
-            val calendar = Calendar.getInstance()
-            DatePickerDialog(requireContext(), { _, year, month, day ->
-                calendar.set(year, month, day)
-                selectedDate = calendar.timeInMillis
-                etDate.setText(dateFormat.format(selectedDate))
-            },
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH)).show()
+    private fun setupSelectionBar() {
+        // Cancela la selección
+        btnCancelSelection.setOnClickListener {
+            adapter.clearSelection()
+            layoutSelectionBar.visibility = View.GONE
         }
 
-        // Dropdown de categorías
-        viewModel.allCategories.observe(viewLifecycleOwner) { categories ->
-            val names = categories.map { it.name }
-            val adapter = android.widget.ArrayAdapter(
-                requireContext(),
-                android.R.layout.simple_dropdown_item_1line,
-                names
-            )
-            acCategory.setAdapter(adapter)
-            acCategory.setText(item.category?.name ?: "", false)
-            acCategory.setOnItemClickListener { _, _, position, _ ->
-                selectedCategoryId = categories[position].id
-            }
+        // Elimina los items seleccionados
+        btnDeleteSelected.setOnClickListener {
+            val selected = adapter.getSelectedItems()
+            if (selected.isEmpty()) return@setOnClickListener
+
+            AlertDialog.Builder(requireContext())
+                .setTitle("Eliminar ${selected.size} movimiento${if (selected.size != 1) "s" else ""}")
+                .setMessage("¿Quieres eliminar los movimientos seleccionados?")
+                .setPositiveButton("Eliminar") { _, _ ->
+                    selected.forEach { viewModel.deleteExpense(it.expense) }
+                    adapter.clearSelection()
+                    layoutSelectionBar.visibility = View.GONE
+                    showMessage("${selected.size} movimiento${if (selected.size != 1) "s" else ""} eliminado${if (selected.size != 1) "s" else ""}")
+                }
+                .setNegativeButton("Cancelar", null)
+                .show()
         }
-
-        AlertDialog.Builder(requireContext())
-            .setTitle("Editar movimiento")
-            .setView(dialogView)
-            .setPositiveButton("Guardar") { _, _ ->
-                val amountText = etAmount.text.toString().trim()
-                val description = etDescription.text.toString().trim()
-
-                if (amountText.isEmpty() || description.isEmpty()) {
-                    showError("Rellena todos los campos")
-                    return@setPositiveButton
-                }
-
-                val amount = amountText.toDoubleOrNull()
-                if (amount == null || amount <= 0) {
-                    showError("Importe no válido")
-                    return@setPositiveButton
-                }
-
-                val type = if (tabType.selectedTabPosition == 1) "INCOME" else "EXPENSE"
-
-                val updated = item.expense.copy(
-                    amount = amount,
-                    description = description,
-                    date = selectedDate,
-                    type = type,
-                    categoryId = selectedCategoryId
-                )
-                viewModel.updateExpense(updated)
-                showMessage("Movimiento actualizado")
-            }
-            .setNegativeButton("Cancelar", null)
-            .show()
-    }
-
-    private fun confirmDelete(item: TransactionWithCategory) {
-        AlertDialog.Builder(requireContext())
-            .setTitle("Eliminar movimiento")
-            .setMessage("¿Quieres eliminar '${item.expense.description}'?")
-            .setPositiveButton("Eliminar") { _, _ ->
-                viewModel.deleteExpense(item.expense)
-                showMessage("Movimiento eliminado")
-            }
-            .setNegativeButton("Cancelar", null)
-            .show()
     }
 
     private fun setupFilterButton() {
         btnFilter.setOnClickListener {
             showDateRangePicker()
         }
-
         chipFilterActive.setOnCloseIconClickListener {
             clearFilter()
         }
@@ -185,24 +136,18 @@ class TransactionsFragment : BaseFragment() {
 
     private fun showDateRangePicker() {
         val calendar = Calendar.getInstance()
-
-        // Primero selecciona fecha inicio
         DatePickerDialog(
             requireContext(),
             { _, startYear, startMonth, startDay ->
                 val startCalendar = Calendar.getInstance()
                 startCalendar.set(startYear, startMonth, startDay, 0, 0, 0)
-
-                // Luego selecciona fecha fin
                 DatePickerDialog(
                     requireContext(),
                     { _, endYear, endMonth, endDay ->
                         val endCalendar = Calendar.getInstance()
                         endCalendar.set(endYear, endMonth, endDay, 23, 59, 59)
-
                         filterStartDate = startCalendar.timeInMillis
                         filterEndDate = endCalendar.timeInMillis
-
                         applyFilter(
                             filterStartDate!!,
                             filterEndDate!!,
@@ -221,11 +166,8 @@ class TransactionsFragment : BaseFragment() {
     }
 
     private fun applyFilter(startDate: Long, endDate: Long, label: String) {
-        // Muestra el chip con el rango activo
         chipFilterActive.text = label
         chipFilterActive.visibility = View.VISIBLE
-
-        // Observa solo el rango seleccionado
         viewModel.getTransactionsByDateRange(startDate, endDate)
             .observe(viewLifecycleOwner) { transactions ->
                 adapter.submitList(transactions)
@@ -250,5 +192,98 @@ class TransactionsFragment : BaseFragment() {
     private fun updateEmptyState(isEmpty: Boolean) {
         tvEmpty.visibility = if (isEmpty) View.VISIBLE else View.GONE
         recyclerView.visibility = if (isEmpty) View.GONE else View.VISIBLE
+    }
+
+    private fun openEditDialog(item: TransactionWithCategory) {
+        val dialogView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.fragment_add_transaction, null)
+
+        // Ocultamos el botón guardar del layout porque el diálogo tiene los suyos propios
+        dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSave).visibility = View.GONE
+
+        val tabType = dialogView.findViewById<com.google.android.material.tabs.TabLayout>(R.id.tabTransactionType)
+        val etAmount = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etAmount)
+        val etDescription = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etDescription)
+        val etDate = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etDate)
+        val acCategory = dialogView.findViewById<android.widget.AutoCompleteTextView>(R.id.acCategory)
+
+        etAmount.setText(item.expense.amount.toString())
+        etDescription.setText(item.expense.description)
+        etDate.setText(dateFormat.format(item.expense.date))
+
+        tabType.addTab(tabType.newTab().setText("Gasto"))
+        tabType.addTab(tabType.newTab().setText("Ingreso"))
+        val tabIndex = if (item.expense.type == "INCOME") 1 else 0
+        tabType.selectTab(tabType.getTabAt(tabIndex))
+
+        var selectedDate = item.expense.date
+        var selectedCategoryId = item.expense.categoryId
+
+        etDate.setOnClickListener {
+            val calendar = Calendar.getInstance()
+            DatePickerDialog(requireContext(), { _, year, month, day ->
+                calendar.set(year, month, day)
+                selectedDate = calendar.timeInMillis
+                etDate.setText(dateFormat.format(selectedDate))
+            },
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DAY_OF_MONTH)).show()
+        }
+
+        viewModel.allCategories.observe(viewLifecycleOwner) { categories ->
+            val names = categories.map { it.name }
+            val adapter = android.widget.ArrayAdapter(
+                requireContext(),
+                android.R.layout.simple_dropdown_item_1line,
+                names
+            )
+            acCategory.setAdapter(adapter)
+            acCategory.setText(item.category?.name ?: "", false)
+            acCategory.setOnItemClickListener { _, _, position, _ ->
+                selectedCategoryId = categories[position].id
+            }
+        }
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Editar movimiento")
+            .setView(dialogView)
+            .setPositiveButton("Guardar") { _, _ ->
+                val amountText = etAmount.text.toString().trim()
+                val description = etDescription.text.toString().trim()
+                if (amountText.isEmpty() || description.isEmpty()) {
+                    showError("Rellena todos los campos")
+                    return@setPositiveButton
+                }
+                val amount = amountText.toDoubleOrNull()
+                if (amount == null || amount <= 0) {
+                    showError("Importe no válido")
+                    return@setPositiveButton
+                }
+                val type = if (tabType.selectedTabPosition == 1) "INCOME" else "EXPENSE"
+                val updated = item.expense.copy(
+                    amount = amount,
+                    description = description,
+                    date = selectedDate,
+                    type = type,
+                    categoryId = selectedCategoryId
+                )
+                viewModel.updateExpense(updated)
+                showMessage("Movimiento actualizado")
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun confirmDelete(item: TransactionWithCategory) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Eliminar movimiento")
+            .setMessage("¿Quieres eliminar '${item.expense.description}'?")
+            .setPositiveButton("Eliminar") { _, _ ->
+                viewModel.deleteExpense(item.expense)
+                showMessage("Movimiento eliminado")
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 }

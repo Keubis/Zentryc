@@ -53,4 +53,14 @@ class ZentrycRepository(context: Context) {
     suspend fun deleteAllExpenses() {
         transactionDao.deleteAllTransactions()
     }
+
+    // Total de ingresos en un rango de fechas
+    fun getIncomeByDateRange(startDate: Long, endDate: Long): LiveData<Double?> {
+        return transactionDao.getIncomeByDateRange(startDate, endDate)
+    }
+
+    // Total de gastos en un rango de fechas
+    fun getExpensesByDateRange(startDate: Long, endDate: Long): LiveData<Double?> {
+        return transactionDao.getExpensesByDateRange(startDate, endDate)
+    }
 }

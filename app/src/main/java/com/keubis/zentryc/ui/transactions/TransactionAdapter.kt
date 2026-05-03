@@ -13,10 +13,30 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 class TransactionAdapter(
-    private val onItemLongClick: (TransactionWithCategory) -> Unit
+    private val onItemLongClick: (TransactionWithCategory) -> Unit,
+    private val onSelectionChanged: (Int) -> Unit = {}
 ) : ListAdapter<TransactionWithCategory, TransactionAdapter.TransactionViewHolder>(DiffCallback()) {
 
     private val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale("es", "ES"))
+
+    // Set de ids seleccionados
+    private val selectedIds = mutableSetOf<Int>()
+
+    // Indica si el modo selección está activo
+    var isSelectionMode = false
+        private set
+
+    // Devuelve los items seleccionados
+    fun getSelectedItems(): List<TransactionWithCategory> {
+        return currentList.filter { selectedIds.contains(it.expense.id) }
+    }
+
+    // Limpia la selección y desactiva el modo selección
+    fun clearSelection() {
+        selectedIds.clear()
+        isSelectionMode = false
+        notifyDataSetChanged()
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TransactionViewHolder {
         val view = LayoutInflater.from(parent.context)
@@ -52,10 +72,45 @@ class TransactionAdapter(
             tvAmount.setTextColor(color)
             viewTypeIndicator.setBackgroundColor(color)
 
+            // Resalta el item si está seleccionado
+            val isSelected = selectedIds.contains(item.expense.id)
+            itemView.setBackgroundColor(
+                if (isSelected)
+                    android.graphics.Color.parseColor("#E3F2FD")
+                else
+                    itemView.context.getColor(android.R.color.white)
+            )
+
+            // Pulsación normal — en modo selección selecciona/deselecciona
+            itemView.setOnClickListener {
+                if (isSelectionMode) {
+                    toggleSelection(item)
+                }
+            }
+
+            // Pulsación larga — activa modo selección o muestra menú contextual
             itemView.setOnLongClickListener {
-                onItemLongClick(item)
+                if (!isSelectionMode) {
+                    isSelectionMode = true
+                    toggleSelection(item)
+                } else {
+                    onItemLongClick(item)
+                }
                 true
             }
+        }
+
+        private fun toggleSelection(item: TransactionWithCategory) {
+            if (selectedIds.contains(item.expense.id)) {
+                selectedIds.remove(item.expense.id)
+                // Si no quedan seleccionados desactiva el modo selección
+                if (selectedIds.isEmpty()) isSelectionMode = false
+            } else {
+                selectedIds.add(item.expense.id)
+            }
+            notifyItemChanged(adapterPosition)
+            // Notifica cuántos items hay seleccionados
+            onSelectionChanged(selectedIds.size)
         }
     }
 
