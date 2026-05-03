@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.TextView
 import androidx.lifecycle.ViewModelProvider
 import com.github.mikephil.charting.charts.PieChart
@@ -15,6 +16,9 @@ import com.github.mikephil.charting.formatter.PercentFormatter
 import com.keubis.zentryc.R
 import com.keubis.zentryc.ui.base.BaseFragment
 import com.keubis.zentryc.ui.dashboard.DashboardViewModel
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 class StatisticsFragment : BaseFragment() {
 
@@ -22,6 +26,12 @@ class StatisticsFragment : BaseFragment() {
     private lateinit var pieChart: PieChart
     private lateinit var tvStatIncome: TextView
     private lateinit var tvStatExpenses: TextView
+    private lateinit var tvCurrentMonth: TextView
+    private lateinit var btnPreviousMonth: ImageButton
+    private lateinit var btnNextMonth: ImageButton
+
+    private val calendar = Calendar.getInstance()
+    private val monthFormat = SimpleDateFormat("MMMM yyyy", Locale("es", "ES"))
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -39,9 +49,13 @@ class StatisticsFragment : BaseFragment() {
         pieChart = view.findViewById(R.id.pieChart)
         tvStatIncome = view.findViewById(R.id.tvStatIncome)
         tvStatExpenses = view.findViewById(R.id.tvStatExpenses)
+        tvCurrentMonth = view.findViewById(R.id.tvCurrentMonth)
+        btnPreviousMonth = view.findViewById(R.id.btnPreviousMonth)
+        btnNextMonth = view.findViewById(R.id.btnNextMonth)
 
         setupPieChart()
-        observeData()
+        setupMonthSelector()
+        loadMonthData()
     }
 
     private fun setupPieChart() {
@@ -58,10 +72,46 @@ class StatisticsFragment : BaseFragment() {
         }
     }
 
-    private fun observeData() {
-        viewModel.allTransactions.observe(viewLifecycleOwner) { transactions ->
+    private fun setupMonthSelector() {
+        btnPreviousMonth.setOnClickListener {
+            // Retrocede un mes
+            calendar.add(Calendar.MONTH, -1)
+            loadMonthData()
+        }
 
-            // Totales para las tarjetas
+        btnNextMonth.setOnClickListener {
+            // Avanza un mes
+            calendar.add(Calendar.MONTH, 1)
+            loadMonthData()
+        }
+    }
+
+    private fun loadMonthData() {
+        // Actualiza el texto del mes
+        val monthName = monthFormat.format(calendar.time)
+        tvCurrentMonth.text = monthName.replaceFirstChar { it.uppercase() }
+
+        // Calcula inicio y fin del mes
+        val startOfMonth = calendar.clone() as Calendar
+        startOfMonth.set(Calendar.DAY_OF_MONTH, 1)
+        startOfMonth.set(Calendar.HOUR_OF_DAY, 0)
+        startOfMonth.set(Calendar.MINUTE, 0)
+        startOfMonth.set(Calendar.SECOND, 0)
+        startOfMonth.set(Calendar.MILLISECOND, 0)
+
+        val endOfMonth = calendar.clone() as Calendar
+        endOfMonth.set(Calendar.DAY_OF_MONTH, endOfMonth.getActualMaximum(Calendar.DAY_OF_MONTH))
+        endOfMonth.set(Calendar.HOUR_OF_DAY, 23)
+        endOfMonth.set(Calendar.MINUTE, 59)
+        endOfMonth.set(Calendar.SECOND, 59)
+
+        val start = startOfMonth.timeInMillis
+        val end = endOfMonth.timeInMillis
+
+        // Observa las transacciones del mes seleccionado
+        viewModel.getTransactionsByDateRange(start, end).observe(viewLifecycleOwner) { transactions ->
+
+            // Totales del mes
             val totalIncome = transactions
                 .filter { it.expense.type == "INCOME" }
                 .sumOf { it.expense.amount }
@@ -73,24 +123,25 @@ class StatisticsFragment : BaseFragment() {
             tvStatIncome.text = String.format("%.2f €", totalIncome)
             tvStatExpenses.text = String.format("%.2f €", totalExpenses)
 
-            // Datos para la gráfica — solo gastos agrupados por categoría
+            // Datos para la gráfica — solo gastos del mes agrupados por categoría
             val expensesByCategory = transactions
                 .filter { it.expense.type == "EXPENSE" }
                 .groupBy { it.category?.name ?: "Sin categoría" }
                 .mapValues { entry -> entry.value.sumOf { it.expense.amount } }
 
             if (expensesByCategory.isEmpty()) {
-                pieChart.setNoDataText("No hay gastos registrados")
+                pieChart.setNoDataText("No hay gastos este mes")
                 pieChart.setNoDataTextColor(Color.GRAY)
+                pieChart.clear()
                 pieChart.invalidate()
                 return@observe
             }
 
-            val entries = expensesByCategory.map { (categoryName, amount) ->
-                PieEntry(amount.toFloat(), categoryName)
+            val entries = expensesByCategory.map { (category, amount) ->
+                PieEntry(amount.toFloat(), category)
             }
 
-// Color real de cada categoría
+            // Usa el color real de cada categoría
             val colors = expensesByCategory.keys.map { categoryName ->
                 val category = transactions
                     .firstOrNull { it.category?.name == categoryName }
@@ -111,14 +162,6 @@ class StatisticsFragment : BaseFragment() {
 
             pieChart.data = PieData(dataSet)
             pieChart.invalidate()
-        }
-
-        viewModel.totalIncome.observe(viewLifecycleOwner) { income ->
-            tvStatIncome.text = String.format("%.2f €", income ?: 0.0)
-        }
-
-        viewModel.totalExpenses.observe(viewLifecycleOwner) { expenses ->
-            tvStatExpenses.text = String.format("%.2f €", expenses ?: 0.0)
         }
     }
 }
