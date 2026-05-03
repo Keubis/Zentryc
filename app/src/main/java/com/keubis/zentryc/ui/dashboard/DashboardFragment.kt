@@ -40,10 +40,14 @@ class DashboardFragment : BaseFragment() {
         tvBalance = view.findViewById(R.id.tvBalance)
         recyclerRecent = view.findViewById(R.id.recyclerRecent)
 
-        // Botón cerrar sesión
+        // Botón cerrar sesión — limpia Room y cierra sesión de Firebase
         view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnLogout)
             .setOnClickListener {
+                // Limpia los datos locales antes de cerrar sesión
+                viewModel.clearLocalData()
+                // Cierra sesión en Firebase
                 com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+                // Navega al login
                 findNavController().navigate(R.id.loginFragment)
             }
 

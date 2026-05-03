@@ -10,6 +10,8 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.FirebaseAuth
 import com.keubis.zentryc.R
 import com.keubis.zentryc.ui.base.BaseFragment
+import androidx.lifecycle.ViewModelProvider
+import com.keubis.zentryc.ui.dashboard.DashboardViewModel
 
 class LoginFragment : BaseFragment() {
 
@@ -62,7 +64,13 @@ class LoginFragment : BaseFragment() {
             // Intenta iniciar sesión con Firebase
             auth.signInWithEmailAndPassword(email, password)
                 .addOnSuccessListener {
-                    // Login correcto, navega al dashboard
+                    // Obtiene el ViewModel para sincronizar datos
+                    val viewModel = ViewModelProvider(requireActivity())[DashboardViewModel::class.java]
+
+                    // Sincroniza datos de Firestore a Room antes de navegar
+                    viewModel.syncFromFirestore()
+
+                    // Navega al dashboard
                     findNavController().navigate(R.id.action_loginFragment_to_dashboardFragment)
                 }
                 .addOnFailureListener { exception ->

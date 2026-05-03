@@ -76,4 +76,38 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun getTransactionsByDateRange(startDate: Long, endDate: Long) =
         localRepository.getTransactionsByDateRange(startDate, endDate)
+
+    // Sincroniza los datos de Firestore a Room al iniciar sesión
+    fun syncFromFirestore() {
+        viewModelScope.launch {
+
+            // Limpia Room para evitar duplicados
+            localRepository.deleteAllExpenses()
+
+            // Descarga y guarda transacciones
+            firebaseRepository.loadExpensesFromFirestore { expenses ->
+                viewModelScope.launch {
+                    expenses.forEach { expense ->
+                        localRepository.insertExpense(expense)
+                    }
+                }
+            }
+
+            // Descarga y guarda categorías
+            firebaseRepository.loadCategoriesFromFirestore { categories ->
+                viewModelScope.launch {
+                    categories.forEach { category ->
+                        localRepository.insertCategory(category)
+                    }
+                }
+            }
+        }
+    }
+
+    // Limpia todos los datos locales de Room al cerrar sesión
+    fun clearLocalData() {
+        viewModelScope.launch {
+            localRepository.deleteAllExpenses()
+        }
+    }
 }

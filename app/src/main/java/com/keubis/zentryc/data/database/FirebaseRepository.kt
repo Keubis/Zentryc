@@ -65,4 +65,62 @@ class FirebaseRepository {
     fun deleteCategory(category: Category) {
         categoriesRef().document(category.id.toString()).delete()
     }
+
+    // Descarga todas las transacciones del usuario desde Firestore
+    fun loadExpensesFromFirestore(onComplete: (List<Expense>) -> Unit) {
+        val uid = userId ?: return
+        firestore.collection("users")
+            .document(uid)
+            .collection("transactions")
+            .get()
+            .addOnSuccessListener { documents ->
+                val expenses = documents.mapNotNull { doc ->
+                    try {
+                        Expense(
+                            // Convierte cada documento de Firestore a un objeto Expense
+                            id = (doc.getLong("id") ?: 0).toInt(),
+                            amount = doc.getDouble("amount") ?: 0.0,
+                            description = doc.getString("description") ?: "",
+                            date = doc.getLong("date") ?: 0L,
+                            type = doc.getString("type") ?: "EXPENSE",
+                            categoryId = doc.getLong("categoryId")?.toInt()
+                        )
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+                onComplete(expenses)
+            }
+            .addOnFailureListener {
+                // Si falla simplemente devuelve lista vacía
+                onComplete(emptyList())
+            }
+    }
+
+    // Descarga todas las categorías del usuario desde Firestore
+    fun loadCategoriesFromFirestore(onComplete: (List<Category>) -> Unit) {
+        val uid = userId ?: return
+        firestore.collection("users")
+            .document(uid)
+            .collection("categories")
+            .get()
+            .addOnSuccessListener { documents ->
+                val categories = documents.mapNotNull { doc ->
+                    try {
+                        Category(
+                            id = (doc.getLong("id") ?: 0).toInt(),
+                            name = doc.getString("name") ?: "",
+                            iconName = doc.getString("iconName") ?: "other",
+                            colorHex = doc.getString("colorHex") ?: "#95A5A6"
+                        )
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+                onComplete(categories)
+            }
+            .addOnFailureListener {
+                onComplete(emptyList())
+            }
+    }
 }

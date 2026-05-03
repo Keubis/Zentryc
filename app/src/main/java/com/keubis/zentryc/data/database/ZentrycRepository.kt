@@ -49,4 +49,8 @@ class ZentrycRepository(context: Context) {
     suspend fun deleteCategory(category: Category) {
         categoryDao.deleteCategory(category)
     }
+
+    suspend fun deleteAllExpenses() {
+        transactionDao.deleteAllTransactions()
+    }
 }

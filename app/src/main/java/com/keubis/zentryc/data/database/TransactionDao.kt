@@ -43,4 +43,8 @@ interface TransactionDao {
 
     @Delete
     suspend fun deleteExpense(expense: Expense)
+
+    // Elimina todas las transacciones de Room
+    @Query("DELETE FROM transactions")
+    suspend fun deleteAllTransactions()
 }
