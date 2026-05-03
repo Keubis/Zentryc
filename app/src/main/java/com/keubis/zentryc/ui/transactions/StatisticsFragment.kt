@@ -19,6 +19,7 @@ import com.keubis.zentryc.ui.dashboard.DashboardViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import android.widget.LinearLayout
 
 class StatisticsFragment : BaseFragment() {
 
@@ -29,9 +30,10 @@ class StatisticsFragment : BaseFragment() {
     private lateinit var tvCurrentMonth: TextView
     private lateinit var btnPreviousMonth: ImageButton
     private lateinit var btnNextMonth: ImageButton
-
     private val calendar = Calendar.getInstance()
     private val monthFormat = SimpleDateFormat("MMMM yyyy", Locale("es", "ES"))
+
+    private lateinit var layoutCategoryBreakdown: LinearLayout
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -52,6 +54,7 @@ class StatisticsFragment : BaseFragment() {
         tvCurrentMonth = view.findViewById(R.id.tvCurrentMonth)
         btnPreviousMonth = view.findViewById(R.id.btnPreviousMonth)
         btnNextMonth = view.findViewById(R.id.btnNextMonth)
+        layoutCategoryBreakdown = view.findViewById(R.id.layoutCategoryBreakdown)
 
         setupPieChart()
         setupMonthSelector()
@@ -122,6 +125,8 @@ class StatisticsFragment : BaseFragment() {
 
             tvStatIncome.text = String.format("%.2f €", totalIncome)
             tvStatExpenses.text = String.format("%.2f €", totalExpenses)
+            // Actualiza el desglose por categoría
+            updateCategoryBreakdown(transactions)
 
             // Datos para la gráfica — solo gastos del mes agrupados por categoría
             val expensesByCategory = transactions
@@ -162,6 +167,65 @@ class StatisticsFragment : BaseFragment() {
 
             pieChart.data = PieData(dataSet)
             pieChart.invalidate()
+        }
+    }
+
+    private fun updateCategoryBreakdown(transactions: List<com.keubis.zentryc.data.model.TransactionWithCategory>) {
+        // Limpia el layout antes de añadir los nuevos datos
+        layoutCategoryBreakdown.removeAllViews()
+
+        // Agrupa todos los movimientos por categoría
+        val byCategory = transactions
+            .groupBy { it.category?.name ?: "Sin categoría" }
+            .mapValues { entry ->
+                entry.value.sumOf { item ->
+                    if (item.expense.type == "INCOME") item.expense.amount
+                    else -item.expense.amount
+                }
+            }
+            .entries
+            .sortedByDescending { it.value }
+
+        if (byCategory.isEmpty()) {
+            val tvEmpty = TextView(requireContext())
+            tvEmpty.text = "No hay movimientos este mes"
+            tvEmpty.setTextColor(android.graphics.Color.GRAY)
+            layoutCategoryBreakdown.addView(tvEmpty)
+            return
+        }
+
+        // Crea una fila por cada categoría
+        byCategory.forEach { (categoryName, total) ->
+            val rowView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.item_category_breakdown, layoutCategoryBreakdown, false)
+
+            val colorView = rowView.findViewById<View>(R.id.viewColor)
+            val tvName = rowView.findViewById<TextView>(R.id.tvCategoryName)
+            val tvAmount = rowView.findViewById<TextView>(R.id.tvCategoryAmount)
+
+            // Obtiene el color real de la categoría
+            val category = transactions
+                .firstOrNull { it.category?.name == categoryName }
+                ?.category
+            try {
+                colorView.setBackgroundColor(
+                    android.graphics.Color.parseColor(category?.colorHex ?: "#95A5A6")
+                )
+            } catch (e: Exception) {
+                colorView.setBackgroundColor(android.graphics.Color.GRAY)
+            }
+
+            tvName.text = categoryName
+            val sign = if (total >= 0) "+" else ""
+            tvAmount.text = String.format("%s%.2f €", sign, total)
+            tvAmount.setTextColor(
+                if (total >= 0)
+                    requireContext().getColor(android.R.color.holo_green_dark)
+                else
+                    requireContext().getColor(android.R.color.holo_red_dark)
+            )
+
+            layoutCategoryBreakdown.addView(rowView)
         }
     }
 }
