@@ -178,20 +178,70 @@ class TransactionsFragment : BaseFragment() {
     }
 
     private fun applyFilter(startDate: Long, endDate: Long, label: String) {
+        // Muestra el chip con el rango activo
         chipFilterActive.text = label
         chipFilterActive.visibility = View.VISIBLE
-        viewModel.getTransactionsByDateRange(startDate, endDate)
-            .observe(viewLifecycleOwner) { transactions ->
+
+        // Si hay filtro de categoría activo combina ambos filtros
+        if (filterCategoryId != null) {
+            viewModel.getTransactionsByCategoryAndDateRange(
+                filterCategoryId!!,
+                startDate,
+                endDate
+            ).observe(viewLifecycleOwner) { transactions ->
                 adapter.submitList(transactions)
                 updateEmptyState(transactions.isEmpty())
             }
+        } else {
+            // Solo filtro de fecha
+            viewModel.getTransactionsByDateRange(startDate, endDate)
+                .observe(viewLifecycleOwner) { transactions ->
+                    adapter.submitList(transactions)
+                    updateEmptyState(transactions.isEmpty())
+                }
+        }
+    }
+
+    private fun applyCategoryFilter(categoryId: Int, categoryName: String) {
+        // Muestra el chip con la categoría seleccionada
+        chipCategoryActive.text = categoryName
+        chipCategoryActive.visibility = View.VISIBLE
+
+        // Si hay filtro de fecha activo combina ambos filtros
+        if (filterStartDate != null && filterEndDate != null) {
+            viewModel.getTransactionsByCategoryAndDateRange(
+                categoryId,
+                filterStartDate!!,
+                filterEndDate!!
+            ).observe(viewLifecycleOwner) { transactions ->
+                adapter.submitList(transactions)
+                updateEmptyState(transactions.isEmpty())
+            }
+        } else {
+            // Solo filtro de categoría
+            viewModel.getTransactionsByCategory(categoryId)
+                .observe(viewLifecycleOwner) { transactions ->
+                    adapter.submitList(transactions)
+                    updateEmptyState(transactions.isEmpty())
+                }
+        }
     }
 
     private fun clearFilter() {
         filterStartDate = null
         filterEndDate = null
         chipFilterActive.visibility = View.GONE
-        observeAllTransactions()
+
+        // Si hay filtro de categoría activo lo respeta
+        if (filterCategoryId != null) {
+            viewModel.getTransactionsByCategory(filterCategoryId!!)
+                .observe(viewLifecycleOwner) { transactions ->
+                    adapter.submitList(transactions)
+                    updateEmptyState(transactions.isEmpty())
+                }
+        } else {
+            observeAllTransactions()
+        }
     }
 
     private fun observeAllTransactions() {
@@ -327,30 +377,6 @@ class TransactionsFragment : BaseFragment() {
                 }
                 .setNegativeButton("Cancelar", null)
                 .show()
-        }
-    }
-
-    private fun applyCategoryFilter(categoryId: Int, categoryName: String) {
-        // Muestra el chip con la categoría seleccionada
-        chipCategoryActive.text = categoryName
-        chipCategoryActive.visibility = View.VISIBLE
-
-        // Si hay también filtro de fecha combina ambos filtros
-        if (filterStartDate != null && filterEndDate != null) {
-            viewModel.getTransactionsByCategoryAndDateRange(
-                categoryId,
-                filterStartDate!!,
-                filterEndDate!!
-            ).observe(viewLifecycleOwner) { transactions ->
-                adapter.submitList(transactions)
-                updateEmptyState(transactions.isEmpty())
-            }
-        } else {
-            viewModel.getTransactionsByCategory(categoryId)
-                .observe(viewLifecycleOwner) { transactions ->
-                    adapter.submitList(transactions)
-                    updateEmptyState(transactions.isEmpty())
-                }
         }
     }
 
