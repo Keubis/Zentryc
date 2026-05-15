@@ -43,3 +43,5 @@ Aplicación Android de gestión de gastos personales desarrollada en Kotlin.
 
 ## Autor
 Keubis — PDAM UAX 2025/2026
+
+🔗 [Ver repositorio en GitHub](https://github.com/Keubis/Zentryc)
