@@ -96,6 +96,8 @@ class LoginFragment : BaseFragment() {
             auth.createUserWithEmailAndPassword(email, password)
                 .addOnSuccessListener {
                     showMessage("Cuenta creada correctamente")
+                    val viewModel = ViewModelProvider(requireActivity())[DashboardViewModel::class.java]
+                    viewModel.syncFromFirestore()
                     findNavController().navigate(R.id.action_loginFragment_to_dashboardFragment)
                 }
                 .addOnFailureListener { exception ->

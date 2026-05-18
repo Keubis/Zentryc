@@ -58,10 +58,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun insertCategory(category: Category) {
         viewModelScope.launch {
-            // Guarda primero en local
-            localRepository.insertCategory(category)
-            // Luego sincroniza con Firebase
-            firebaseRepository.syncCategory(category)
+            // Guarda en local y obtiene el id real generado por Room
+            val generatedId = localRepository.insertCategory(category)
+            // Crea una copia con el id real
+            val categoryWithId = category.copy(id = generatedId.toInt())
+            // Sincroniza con Firebase usando el id real
+            firebaseRepository.syncCategory(categoryWithId)
         }
     }
 
@@ -81,20 +83,42 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             // Limpia Room para evitar duplicados
             localRepository.deleteAllExpenses()
 
-            // Descarga y guarda transacciones
-            firebaseRepository.loadExpensesFromFirestore { expenses ->
-                viewModelScope.launch {
-                    expenses.forEach { expense ->
-                        localRepository.insertExpense(expense)
-                    }
-                }
-            }
 
             // Descarga y guarda categorías
             firebaseRepository.loadCategoriesFromFirestore { categories ->
                 viewModelScope.launch {
-                    categories.forEach { category ->
-                        localRepository.insertCategory(category)
+                    localRepository.deleteAllCategories()
+
+                    if (categories.isEmpty()) {
+                        // Cuenta nueva — inserta categorías por defecto y las sube a Firestore
+                        val defaultCategories = listOf(
+                            com.keubis.zentryc.data.model.Category(name = "Alimentación", iconName = "food",      colorHex = "#FF5733"),
+                            com.keubis.zentryc.data.model.Category(name = "Transporte",   iconName = "transport", colorHex = "#3380FF"),
+                            com.keubis.zentryc.data.model.Category(name = "Ocio",         iconName = "leisure",   colorHex = "#9B59B6"),
+                            com.keubis.zentryc.data.model.Category(name = "Salud",        iconName = "health",    colorHex = "#2ECC71"),
+                            com.keubis.zentryc.data.model.Category(name = "Hogar",        iconName = "home",      colorHex = "#F39C12"),
+                            com.keubis.zentryc.data.model.Category(name = "Nómina",       iconName = "salary",    colorHex = "#1ABC9C"),
+                            com.keubis.zentryc.data.model.Category(name = "Otros",        iconName = "other",     colorHex = "#95A5A6")
+                        )
+                        defaultCategories.forEach { category ->
+                            val generatedId = localRepository.insertCategory(category)
+                            val categoryWithId = category.copy(id = generatedId.toInt())
+                            firebaseRepository.syncCategory(categoryWithId)
+                        }
+                    } else {
+                        // Cuenta existente — carga sus categorías
+                        categories.forEach { category ->
+                            localRepository.insertCategory(category)
+                        }
+                    }
+
+                    // Descarga y guarda transacciones
+                    firebaseRepository.loadExpensesFromFirestore { expenses ->
+                        viewModelScope.launch {
+                            expenses.forEach { expense ->
+                                localRepository.insertExpense(expense)
+                            }
+                        }
                     }
                 }
             }
@@ -105,6 +129,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun clearLocalData() {
         viewModelScope.launch {
             localRepository.deleteAllExpenses()
+            localRepository.deleteAllCategories()
         }
     }
 

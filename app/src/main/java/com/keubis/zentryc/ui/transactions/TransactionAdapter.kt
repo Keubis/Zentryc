@@ -85,6 +85,8 @@ class TransactionAdapter(
             itemView.setOnClickListener {
                 if (isSelectionMode) {
                     toggleSelection(item)
+                } else {
+                    onItemLongClick(item)  // muestra menú editar/eliminar
                 }
             }
 

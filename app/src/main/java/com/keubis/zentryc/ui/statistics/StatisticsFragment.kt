@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.lifecycle.ViewModelProvider
 import com.github.mikephil.charting.charts.PieChart
@@ -14,12 +15,12 @@ import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
 import com.github.mikephil.charting.formatter.PercentFormatter
 import com.keubis.zentryc.R
+import com.keubis.zentryc.data.model.TransactionWithCategory
 import com.keubis.zentryc.ui.base.BaseFragment
 import com.keubis.zentryc.ui.dashboard.DashboardViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-import android.widget.LinearLayout
 
 class StatisticsFragment : BaseFragment() {
 
@@ -170,7 +171,7 @@ class StatisticsFragment : BaseFragment() {
         }
     }
 
-    private fun updateCategoryBreakdown(transactions: List<com.keubis.zentryc.data.model.TransactionWithCategory>) {
+    private fun updateCategoryBreakdown(transactions: List<TransactionWithCategory>) {
         // Limpia el layout antes de añadir los nuevos datos
         layoutCategoryBreakdown.removeAllViews()
 
@@ -189,7 +190,7 @@ class StatisticsFragment : BaseFragment() {
         if (byCategory.isEmpty()) {
             val tvEmpty = TextView(requireContext())
             tvEmpty.text = "No hay movimientos este mes"
-            tvEmpty.setTextColor(android.graphics.Color.GRAY)
+            tvEmpty.setTextColor(Color.GRAY)
             layoutCategoryBreakdown.addView(tvEmpty)
             return
         }
@@ -209,10 +210,10 @@ class StatisticsFragment : BaseFragment() {
                 ?.category
             try {
                 colorView.setBackgroundColor(
-                    android.graphics.Color.parseColor(category?.colorHex ?: "#95A5A6")
+                    Color.parseColor(category?.colorHex ?: "#95A5A6")
                 )
             } catch (e: Exception) {
-                colorView.setBackgroundColor(android.graphics.Color.GRAY)
+                colorView.setBackgroundColor(Color.GRAY)
             }
 
             tvName.text = categoryName

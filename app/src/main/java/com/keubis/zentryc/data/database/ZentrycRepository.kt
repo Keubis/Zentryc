@@ -42,8 +42,8 @@ class ZentrycRepository(context: Context) {
     // Categorías
     val allCategories: LiveData<List<Category>> = categoryDao.getAllCategories()
 
-    suspend fun insertCategory(category: Category) {
-        categoryDao.insertCategory(category)
+    suspend fun insertCategory(category: Category): Long {
+        return categoryDao.insertCategory(category)
     }
 
     suspend fun deleteCategory(category: Category) {
@@ -76,5 +76,9 @@ class ZentrycRepository(context: Context) {
         endDate: Long
     ): LiveData<List<TransactionWithCategory>> {
         return transactionDao.getTransactionsByCategoryAndDateRange(categoryId, startDate, endDate)
+    }
+
+    suspend fun deleteAllCategories() {
+        categoryDao.deleteAllCategories()
     }
 }

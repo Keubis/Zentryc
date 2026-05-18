@@ -11,8 +11,11 @@ interface CategoryDao {
     fun getAllCategories(): LiveData<List<Category>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertCategory(category: Category)
+    suspend fun insertCategory(category: Category) : Long
 
     @Delete
     suspend fun deleteCategory(category: Category)
+
+    @Query("DELETE FROM categories")
+    suspend fun deleteAllCategories()
 }
